@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  dagster:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./crypto_pipeline/data:/app/crypto_pipeline/data
+    environment:
+      - DUCKDB_PATH=/app/crypto_pipeline/data/crypto.duckdb
+    restart: unless-stopped 

@@ -1,0 +1,9 @@
+dagster>=1.10.0
+dagster-webserver>=1.10.0
+requests>=2.31.0
+pandas>=2.2.0
+duckdb>=1.0.0
+python-dotenv>=1.0.0
+matplotlib>=3.8.0
+pytest>=8.0.0
+pyarrow>=13.0.0 
