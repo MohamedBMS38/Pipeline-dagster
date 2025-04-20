@@ -86,6 +86,7 @@ def store_crypto_list(context: AssetExecutionContext, crypto_coins_list) -> None
     group_name="extract",
     partitions_def=DAILY_PARTITIONS,
     required_resource_keys={"coingecko_resource"},
+    deps=["store_crypto_list"],
 )
 def crypto_market_data(context: AssetExecutionContext) -> List[Dict[str, Any]]:
     """
@@ -134,26 +135,20 @@ def store_market_data(context: AssetExecutionContext, crypto_market_data) -> Non
 @asset(
     description="Extrait l'historique des prix pour les principales cryptomonnaies",
     group_name="extract",
-    partitions_def=DAILY_PARTITIONS,
+    deps=["store_market_data"],
     required_resource_keys={"coingecko_resource"},
 )
-def crypto_price_history(context: AssetExecutionContext) -> Dict[str, Dict[str, Any]]:
+def crypto_price_history(context: AssetExecutionContext) -> Dict[str, Dict[str, List[List[float]]]]:
     """
     Récupère l'historique des prix pour les principales cryptomonnaies.
     """
-    # Vérifier si le job est exécuté avec des partitions
-    try:
-        partition_date = context.partition_key
-        context.log.info(f"Extraction de l'historique des prix pour la partition {partition_date}")
-    except:
-        # Si le run n'est pas partitionné, utiliser la date du jour
-        partition_date = datetime.now().strftime("%Y-%m-%d")
-        context.log.info(f"Run non partitionné. Extraction de l'historique des prix pour la date {partition_date}")
+    context.log.info("Extraction de l'historique des prix")
     
     price_history = {}
     for coin_id in TOP_CRYPTO_COINS:
+        history = context.resources.coingecko_resource.get_coin_price_history(coin_id)
+        price_history[coin_id] = history
         context.log.info(f"Récupération de l'historique des prix pour {coin_id}")
-        price_history[coin_id] = context.resources.coingecko_resource.get_coin_price_history(coin_id)
     
     return price_history
 
@@ -202,55 +197,33 @@ def crypto_price_trends(context: AssetExecutionContext) -> pd.DataFrame:
         return pd.DataFrame(columns=['id', 'name', 'price', 'market_cap', 'price_change_percentage_24h'])
 
 @asset(
-    description="Visualisation des tendances de prix des cryptomonnaies",
+    description="Visualisation des tendances de prix",
     group_name="visualize",
     deps=["crypto_price_trends"],
     required_resource_keys={"duckdb_resource"},
 )
 def crypto_price_visualization(context: AssetExecutionContext, crypto_price_trends) -> str:
     """
-    Crée des visualisations pour les tendances de prix des cryptomonnaies.
+    Génère une visualisation des tendances de prix des cryptomonnaies.
     """
-    context.log.info("Création des visualisations pour les tendances de prix")
+    context.log.info("Génération de la visualisation des tendances de prix")
     
-    if crypto_price_trends.empty:
-        context.log.warning("Pas de données pour créer des visualisations")
-        return "Pas de visualisations créées - données insuffisantes"
-        
-    # Prendre les 5 cryptomonnaies avec les plus grandes capitalisations
-    top_5_coins = crypto_price_trends.head(5)
+    # Créer un graphique
+    plt.figure(figsize=(12, 8))
+    plt.bar(crypto_price_trends['name'], crypto_price_trends['price_change_percentage_24h'])
+    plt.title("Variation de prix sur 24h pour les principales cryptomonnaies")
+    plt.xlabel("Cryptomonnaie")
+    plt.ylabel("Variation en %")
+    plt.xticks(rotation=45)
+    plt.grid(True, axis='y')
     
-    # Créer une visualisation pour chaque cryptomonnaie
-    for idx, coin in top_5_coins.iterrows():
-        coin_id = coin['id']
-        coin_name = coin['name']
-        
-        # Récupérer l'historique des prix pour les 30 derniers jours
-        try:
-            price_history = context.resources.duckdb_resource.get_price_history_for_coin(coin_id, 30)
-            
-            if price_history.empty:
-                context.log.warning(f"Pas de données d'historique pour {coin_name}")
-                continue
-            
-            # Créer le graphique
-            plt.figure(figsize=(10, 6))
-            plt.plot(price_history['timestamp'], price_history['price'])
-            plt.title(f"Évolution du prix de {coin_name} sur 30 jours")
-            plt.xlabel("Date")
-            plt.ylabel("Prix (USD)")
-            plt.grid(True)
-            
-            # Sauvegarder le graphique
-            file_path = f"crypto_pipeline/data/visualizations_{coin_id}.png"
-            plt.savefig(file_path)
-            plt.close()
-            
-            context.log.info(f"Visualisation créée pour {coin_name} et sauvegardée dans {file_path}")
-        except Exception as e:
-            context.log.error(f"Erreur lors de la création de la visualisation pour {coin_name}: {e}")
+    # Sauvegarder le graphique
+    file_path = "crypto_pipeline/data/price_trends.png"
+    plt.savefig(file_path)
+    plt.close()
     
-    return "Visualisations créées avec succès"
+    context.log.info(f"Visualisation sauvegardée dans {file_path}")
+    return file_path
 
 # Définition multi-asset pour le rapport mensuel
 @multi_asset(
@@ -258,7 +231,7 @@ def crypto_price_visualization(context: AssetExecutionContext, crypto_price_tren
         "monthly_report_data": AssetOut(description="Données du rapport mensuel"),
         "monthly_report_visualization": AssetOut(description="Visualisation du rapport mensuel"),
     },
-    deps={"market_data": AssetIn("store_market_data")},
+    deps={"market_data": AssetIn("store_market_data"), "price_history": AssetIn("store_price_history")},
     compute_kind="pandas",
     group_name="reporting",
     partitions_def=MONTHLY_PARTITIONS,

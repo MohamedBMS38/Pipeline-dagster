@@ -1,157 +1,272 @@
-# Pipeline de Données Crypto avec Dagster et CoinGecko
+# Pipeline de Données Cryptomonnaies avec Dagster
 
-Ce projet implémente une pipeline de données complète pour extraire, stocker, transformer et visualiser des données de cryptomonnaies en utilisant l'API CoinGecko, DuckDB comme base de données et Dagster comme orchestrateur.
+Ce projet implémente un pipeline de données pour l'analyse des cryptomonnaies en utilisant Dagster comme orchestrateur. Il extrait des données de l'API CoinGecko, les stocke dans une base de données DuckDB, et génère des analyses et visualisations.
 
-## 📋 Fonctionnalités
+## Architecture du Projet
 
-- **Extraction de données** depuis l'API CoinGecko
-- **Stockage** des données dans DuckDB
-- **Transformation** et analyse des données
-- **Visualisation** des tendances de prix
-- **Orchestration** avec Dagster (jobs, assets, schedules, sensors)
-- **Tests unitaires** pour assurer la fiabilité
+Le projet est structuré en plusieurs composants :
 
-## 🛠️ Architecture du projet
-
-```
-crypto_pipeline/
-├── assets/            # Assets Dagster (composants de données)
-├── jobs/              # Jobs Dagster (définitions des workflows)
-├── resources/         # Ressources Dagster (connexions externes)
-├── schedules/         # Planifications d'exécution
-├── sensors/           # Capteurs pour détecter des événements
-├── tests/             # Tests unitaires
-├── utils/             # Fonctions utilitaires
-├── data/              # Données et visualisations générées
-└── __main__.py        # Point d'entrée principal
-```
-
-## 📦 Installation
-
-### Prérequis
-
-- Python 3.8+
-- pip (gestionnaire de paquets Python)
-
-### 1. Créer un environnement virtuel
-
-```bash
-python -m venv venv
-```
-
-### 2. Activer l'environnement virtuel
-
-#### Windows:
-```bash
-venv\Scripts\activate
-```
-
-#### macOS/Linux:
-```bash
-source venv/bin/activate
-```
-
-### 3. Installer les dépendances
-
-```bash
-pip install dagster dagster-webserver requests pandas duckdb python-dotenv matplotlib pytest pyarrow
-```
-
-## 🚀 Utilisation
-
-### Démarrer le serveur Dagster
-
-```bash
-dagster dev
-```
-
-Ouvrez un navigateur et accédez à `http://localhost:3000` pour interagir avec l'interface Dagster.
-
-### Exécuter la pipeline complète
-
-```bash
-python -m crypto_pipeline
-```
-
-### Exécuter un job spécifique
-
-```bash
-dagster job execute -f crypto_pipeline/__main__.py -a crypto_metadata_job
-```
-
-### Exécuter les tests
-
-```bash
-pytest crypto_pipeline/tests/
-```
-
-## 🔄 Pipeline de données
-
-La pipeline comprend les étapes suivantes:
-
-1. **Extraction** des données depuis l'API CoinGecko
-   - Liste des cryptomonnaies
-   - Données de marché actuelles
+1. **Extraction** (`crypto_pipeline/assets/extract/`)
+   - Récupération des métadonnées des cryptomonnaies
+   - Extraction des données de marché
    - Historique des prix
 
-2. **Stockage** dans DuckDB
-   - Tables pour les métadonnées, données de marché et historique des prix
+2. **Stockage** (`crypto_pipeline/assets/load/`)
+   - Stockage des données dans DuckDB
+   - Gestion des partitions temporelles
 
-3. **Transformation** des données
+3. **Transformation** (`crypto_pipeline/assets/transform/`)
    - Analyse des tendances de prix
-   - Calculs statistiques
+   - Calcul des indicateurs techniques
 
-4. **Visualisation**
-   - Graphiques d'évolution des prix
-   - Comparaisons entre cryptomonnaies
+4. **Visualisation** (`crypto_pipeline/assets/visualize/`)
+   - Génération de graphiques
    - Rapports mensuels
 
-## ⏱️ Planification et automatisation
+5. **Orchestration** (`crypto_pipeline/`)
+   - Jobs Dagster pour l'exécution des étapes
+   - Schedules pour l'automatisation
+   - Sensors pour la détection de changements
 
-Le projet utilise les fonctionnalités d'orchestration de Dagster:
+## Prérequis Système
 
-- **Schedules**: Exécution planifiée des jobs (quotidienne, hebdomadaire, mensuelle)
-- **Sensors**: Déclenchement basé sur des événements (mouvement de prix, disponibilité de données)
-- **Partitions**: Segmentation des données par jour/mois
+- Python 3.8 ou supérieur
+- pip (gestionnaire de paquets Python)
+- Git
+- 500 Mo d'espace disque minimum
+- Connexion Internet
 
-## 📊 Visualisations
+## Installation
 
-Les visualisations sont générées dans le répertoire `crypto_pipeline/data/` et comprennent:
+1. **Cloner le repository**
+   ```bash
+   git clone https://github.com/MohamedBMS38/Pipeline-dagster.git
+   cd Pipeline-dagster
+   ```
 
-- Graphiques d'évolution des prix
-- Aperçu du marché des cryptomonnaies
-- Rapports mensuels comparatifs
+2. **Créer et activer un environnement virtuel**
+   ```bash
+   # Windows
+   python -m venv venv
+   .\venv\Scripts\activate
 
-## 📌 Configuration
+   # Linux/Mac
+   python -m venv venv
+   source venv/bin/activate
+   ```
 
-Vous pouvez configurer l'application via des variables d'environnement:
+3. **Installer les dépendances**
+   ```bash
+   pip install -e .
+   ```
 
-- `DUCKDB_PATH`: Chemin vers la base de données DuckDB (par défaut: `crypto_pipeline/data/crypto.duckdb`)
+4. **Configurer les variables d'environnement**
+   ```bash
+   # Copier le fichier d'exemple
+   cp .env.example .env
+   ```
+   Modifier le fichier `.env` avec vos configurations :
+   ```
+   DUCKDB_PATH=crypto_pipeline/data/crypto.duckdb
+   ```
 
-Créez un fichier `.env` à la racine du projet pour définir ces variables:
+## Utilisation
+
+### Lancement de l'Interface Dagster
+
+```bash
+python -m dagster dev -m crypto_pipeline -p 3000
+```
+
+Accédez à l'interface web : http://localhost:3000
+
+### Exécution des Jobs
+
+Les jobs sont désactivés par défaut pour éviter une exécution automatique. Pour les exécuter :
+
+1. **Job de Métadonnées** (Étape 1)
+   - Description : Extrait la liste des cryptomonnaies
+   - Exécution manuelle requise
+   - Fréquence recommandée : Une fois par semaine
+
+2. **Job de Données de Marché** (Étape 2)
+   - Description : Récupère les données de marché actuelles
+   - Exécution manuelle requise
+   - Fréquence recommandée : Toutes les heures
+
+3. **Job d'Historique des Prix** (Étape 3)
+   - Description : Extrait l'historique des prix
+   - Exécution manuelle requise
+   - Fréquence recommandée : Toutes les heures
+
+4. **Job d'Analyse** (Étape 4)
+   - Description : Génère les analyses et visualisations
+   - Exécution manuelle requise
+   - Fréquence recommandée : Toutes les heures
+
+5. **Job de Rapport Mensuel** (Étape 5)
+   - Description : Génère le rapport mensuel
+   - Exécution manuelle requise
+   - Fréquence recommandée : Une fois par mois
+
+### Ordre d'Exécution Recommandé
+
+1. Lancer le job de métadonnées
+2. Attendre sa complétion
+3. Lancer le job de données de marché
+4. Attendre sa complétion
+5. Lancer le job d'historique des prix
+6. Attendre sa complétion
+7. Lancer le job d'analyse
+8. Attendre sa complétion
+9. Lancer le job de rapport mensuel (si nécessaire)
+
+## Structure des Données
+
+Les données sont stockées dans une base DuckDB avec les tables suivantes :
+
+- `crypto_metadata` : Informations sur les cryptomonnaies
+- `market_data` : Données de marché quotidiennes
+- `price_history` : Historique des prix
+- `price_trends` : Analyses des tendances
+
+## Visualisations
+
+Les visualisations sont générées dans le dossier `crypto_pipeline/data/` :
+- `price_trends.png` : Graphique des tendances de prix
+- `monthly_report_YYYY-MM.png` : Rapports mensuels
+
+## Dépannage
+
+Si vous rencontrez des problèmes :
+
+1. **Erreur de Port**
+   ```bash
+   # Changer le port si 3000 est occupé
+   python -m dagster dev -m crypto_pipeline -p 3001
+   ```
+
+2. **Erreur de Base de Données**
+   - Vérifier que le chemin dans `.env` est correct
+   - S'assurer que le dossier `crypto_pipeline/data/` existe
+
+3. **Erreur d'API**
+   - Vérifier la connexion Internet
+   - S'assurer que l'API CoinGecko est accessible
+
+## Tests Unitaires
+
+Le projet inclut des tests unitaires pour assurer la fiabilité du code. Les tests sont organisés dans le dossier `crypto_pipeline/tests/`.
+
+### Structure des Tests
 
 ```
-DUCKDB_PATH=chemin/vers/ma/base.duckdb
+crypto_pipeline/tests/
+├── test_extract/          # Tests des fonctions d'extraction
+├── test_load/             # Tests des fonctions de chargement
+├── test_transform/        # Tests des fonctions de transformation
+├── test_visualize/        # Tests des fonctions de visualisation
+└── test_utils/            # Tests des fonctions utilitaires
 ```
 
-## 🔍 Dépannage
+### Exécution des Tests
 
-### API CoinGecko
+1. **Lancer tous les tests**
+   ```bash
+   python -m pytest crypto_pipeline/tests/
+   ```
 
-L'API CoinGecko gratuite a des limites de taux. Si vous rencontrez des erreurs de limitation de taux, ralentissez vos requêtes ou envisagez d'utiliser une clé API payante.
+2. **Lancer les tests d'un module spécifique**
+   ```bash
+   # Tests d'extraction
+   python -m pytest crypto_pipeline/tests/test_extract/
 
-### Problèmes de base de données
+   # Tests de chargement
+   python -m pytest crypto_pipeline/tests/test_load/
 
-Si vous rencontrez des problèmes avec DuckDB, essayez de supprimer le fichier de base de données et laissez l'application le recréer.
+   # Tests de transformation
+   python -m pytest crypto_pipeline/tests/test_transform/
 
-## 🤝 Contribution
+   # Tests de visualisation
+   python -m pytest crypto_pipeline/tests/test_visualize/
+   ```
 
-Les contributions sont les bienvenues! N'hésitez pas à ouvrir une issue ou soumettre une pull request.
+3. **Lancer un test spécifique**
+   ```bash
+   python -m pytest crypto_pipeline/tests/test_extract/test_coingecko_api.py::test_get_crypto_list
+   ```
 
-## 📜 Licence
+4. **Générer un rapport de couverture**
+   ```bash
+   python -m pytest --cov=crypto_pipeline crypto_pipeline/tests/
+   ```
 
-Ce projet est sous licence MIT.
+### Types de Tests
 
----
+1. **Tests d'API**
+   - Vérification des appels à l'API CoinGecko
+   - Tests des limites de taux
+   - Gestion des erreurs
 
-Développé dans le cadre d'un projet éducatif sur l'ingénierie des données avec Dagster. 
+2. **Tests de Base de Données**
+   - Création des tables
+   - Insertion des données
+   - Requêtes de sélection
+
+3. **Tests de Transformation**
+   - Calcul des indicateurs techniques
+   - Analyse des tendances
+   - Agrégation des données
+
+4. **Tests de Visualisation**
+   - Génération des graphiques
+   - Format des fichiers
+   - Contenu des visualisations
+
+### Bonnes Pratiques
+
+1. **Avant d'écrire un test**
+   - Identifier la fonctionnalité à tester
+   - Définir les cas de test
+   - Préparer les données de test
+
+2. **Pendant l'écriture du test**
+   - Utiliser des fixtures pour les données de test
+   - Tester les cas limites
+   - Vérifier les erreurs attendues
+
+3. **Après l'écriture du test**
+   - Vérifier la couverture du code
+   - Documenter les cas de test
+   - Maintenir les tests à jour
+
+### Exemple de Test
+
+```python
+def test_get_crypto_list():
+    """Test de la récupération de la liste des cryptomonnaies."""
+    # Préparation
+    api = CoinGeckoAPI()
+    
+    # Exécution
+    result = api.get_crypto_list()
+    
+    # Vérification
+    assert isinstance(result, list)
+    assert len(result) > 0
+    assert all(isinstance(coin, dict) for coin in result)
+```
+
+## Contribution
+
+Les contributions sont les bienvenues ! Pour contribuer :
+
+1. Fork le projet
+2. Créer une branche pour votre fonctionnalité
+3. Commiter vos changements
+4. Pousser vers la branche
+5. Ouvrir une Pull Request
+
+## Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.

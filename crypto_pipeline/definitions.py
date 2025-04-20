@@ -31,10 +31,10 @@ defs = Definitions(
         jobs.crypto_monthly_report_job,
     ],
     schedules=[
-        schedules.weekly_metadata_update_schedule,
-        schedules.market_data_update_schedule,
-        schedules.price_history_update_schedule,
-        schedules.analytics_update_schedule,
+        schedules.metadata_schedule,
+        schedules.market_data_schedule,
+        schedules.price_history_schedule,
+        schedules.analytics_schedule,
         schedules.monthly_report_schedule,
     ],
     sensors=[

@@ -7,7 +7,9 @@ from dagster import (
     ScheduleDefinition,
     DailyPartitionsDefinition,
     MonthlyPartitionsDefinition,
-    AssetSelection
+    AssetSelection,
+    RunRequest,
+    SkipReason
 )
 from datetime import datetime, timedelta
 from crypto_pipeline.jobs.crypto_jobs import (
@@ -24,42 +26,47 @@ DAILY_PARTITIONS = DailyPartitionsDefinition(start_date=datetime.now() - timedel
 # Partitions mensuelles à partir de 2023
 MONTHLY_PARTITIONS = MonthlyPartitionsDefinition(start_date=datetime(2023, 1, 1))
 
-# Schedule pour mettre à jour les métadonnées (liste des cryptomonnaies) de manière hebdomadaire
-weekly_metadata_update_schedule = ScheduleDefinition(
-    job_name="crypto_metadata_job",
-    cron_schedule="0 0 * * 0",  # tous les dimanches à minuit
+# Schedule pour le job de métadonnées (désactivé)
+metadata_schedule = ScheduleDefinition(
+    name="metadata_schedule",
+    cron_schedule="0 * * * *",  # Toutes les heures
+    job=crypto_metadata_job,
     execution_timezone="Europe/Paris",
-    description="Met à jour la liste des cryptomonnaies de manière hebdomadaire",
+    should_execute=lambda context: False,  # Désactivé
 )
 
-# Schedule pour mettre à jour les données de marché quotidiennement
-market_data_update_schedule = ScheduleDefinition(
-    job_name="crypto_market_data_job",
-    cron_schedule="0 8 * * *",  # tous les jours à 8h du matin
+# Schedule pour le job de données de marché (désactivé)
+market_data_schedule = ScheduleDefinition(
+    name="market_data_schedule",
+    cron_schedule="0 * * * *",  # Toutes les heures
+    job=crypto_market_data_job,
     execution_timezone="Europe/Paris",
-    description="Met à jour les données de marché quotidiennement",
+    should_execute=lambda context: False,  # Désactivé
 )
 
-# Schedule pour mettre à jour l'historique des prix quotidiennement
-price_history_update_schedule = ScheduleDefinition(
-    job_name="crypto_price_history_job",
-    cron_schedule="0 9 * * *",  # tous les jours à 9h du matin
+# Schedule pour le job d'historique des prix (désactivé)
+price_history_schedule = ScheduleDefinition(
+    name="price_history_schedule",
+    cron_schedule="0 * * * *",  # Toutes les heures
+    job=crypto_price_history_job,
     execution_timezone="Europe/Paris",
-    description="Met à jour l'historique des prix quotidiennement",
+    should_execute=lambda context: False,  # Désactivé
 )
 
-# Schedule pour mettre à jour les analyses quotidiennement
-analytics_update_schedule = ScheduleDefinition(
-    job_name="crypto_analytics_job",
-    cron_schedule="0 10 * * *",  # tous les jours à 10h du matin
+# Schedule pour le job d'analyse (désactivé)
+analytics_schedule = ScheduleDefinition(
+    name="analytics_schedule",
+    cron_schedule="0 * * * *",  # Toutes les heures
+    job=crypto_analytics_job,
     execution_timezone="Europe/Paris",
-    description="Met à jour les analyses quotidiennement",
+    should_execute=lambda context: False,  # Désactivé
 )
 
-# Schedule pour générer un rapport mensuel
+# Schedule pour le rapport mensuel (désactivé)
 monthly_report_schedule = ScheduleDefinition(
-    job_name="crypto_monthly_report_job",
-    cron_schedule="0 0 1 * *",  # le premier jour de chaque mois à minuit
+    name="monthly_report_schedule",
+    cron_schedule="0 0 1 * *",  # Le premier jour de chaque mois à minuit
+    job=crypto_monthly_report_job,
     execution_timezone="Europe/Paris",
-    description="Génère un rapport mensuel sur les performances des cryptomonnaies",
+    should_execute=lambda context: False,  # Désactivé
 ) 
