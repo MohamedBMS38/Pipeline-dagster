@@ -321,27 +321,27 @@ class DuckDBResource(ConfigurableResource):
                 tables = conn.execute("SELECT table_name FROM duckdb_tables()").fetchall()
                 table_names = [t[0] for t in tables]
                 
-                if 'price_history' not in table_names:
-                    logger.warning("La table price_history n'existe pas encore")
-                    return pd.DataFrame(columns=['date', 'price'])
+                if 'crypto_price_history' not in table_names:
+                    logger.warning("La table crypto_price_history n'existe pas encore")
+                    return pd.DataFrame(columns=['timestamp', 'price', 'market_cap', 'total_volume'])
                     
                 # Vérifier si la table contient des données pour cette crypto
                 count = conn.execute(
-                    "SELECT COUNT(*) FROM price_history WHERE coin_id = ?",
+                    "SELECT COUNT(*) FROM crypto_price_history WHERE id = ?",
                     (coin_id,)
                 ).fetchone()[0]
                 
                 if count == 0:
                     logger.warning(f"Pas de données d'historique pour {coin_id}")
-                    return pd.DataFrame(columns=['date', 'price'])
+                    return pd.DataFrame(columns=['timestamp', 'price', 'market_cap', 'total_volume'])
                     
                 # Récupérer l'historique des prix
                 result = conn.execute(
                     """
-                    SELECT date, price
-                    FROM price_history
-                    WHERE coin_id = ?
-                    ORDER BY date ASC
+                    SELECT timestamp, price
+                    FROM crypto_price_history
+                    WHERE id = ?
+                    ORDER BY timestamp ASC
                     """,
                     (coin_id,)
                 ).df()
@@ -350,4 +350,4 @@ class DuckDBResource(ConfigurableResource):
                 
         except Exception as e:
             logger.error(f"Erreur lors de la récupération de l'historique des prix pour {coin_id} : {e}")
-            return pd.DataFrame(columns=['date', 'price']) 
+            return pd.DataFrame(columns=['timestamp', 'price', 'market_cap', 'total_volume'])

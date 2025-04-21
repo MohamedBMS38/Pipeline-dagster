@@ -339,7 +339,7 @@ def monthly_crypto_report(context: AssetExecutionContext) -> Tuple[pd.DataFrame,
         for coin_id in top_coins['id']:
             history = context.resources.duckdb_resource.get_coin_price_history(coin_id)
             if not history.empty:
-                ax4.plot(history['date'], history['price'], label=coin_id)
+                ax4.plot(history['timestamp'], history['price'], label=coin_id)
         ax4.set_title(f"Évolution des prix sur le mois - {month}")
         ax4.set_xlabel("Date")
         ax4.set_ylabel("Prix en USD")
