@@ -83,46 +83,31 @@ def store_crypto_list(context: AssetExecutionContext, crypto_coins_list) -> None
     # Stocker les données
     context.resources.duckdb_resource.store_coin_list(crypto_coins_list)
 
+
 @asset(
+    description="Extrait les données de marché pour les principales cryptomonnaies",
     group_name="extract",
-    description="Extrait les données de marché pour les 4 principales cryptomonnaies",
+    partitions_def=DAILY_PARTITIONS,
+    required_resource_keys={"coingecko_resource"},
+    deps=["store_crypto_list"],
 )
-def crypto_market_data(context) -> List[Dict[str, Any]]:
-    """Extrait les données de marché pour les 4 principales cryptomonnaies."""
-    # Liste des 4 principales cryptomonnaies à suivre
-    COINS_TO_TRACK = ["bitcoin", "ethereum", "binancecoin", "cardano"]
-    
+def crypto_market_data(context: AssetExecutionContext) -> List[Dict[str, Any]]:
+    """
+    Récupère les données de marché pour les principales cryptomonnaies.
+    """
+    # Vérifier si le job est exécuté avec des partitions
     try:
-        context.log.info(f"Extraction des données de marché pour {len(COINS_TO_TRACK)} cryptomonnaies")
-        market_data = []
-        
-        for coin_id in COINS_TO_TRACK:
-            try:
-                # Ajouter un délai de 2 secondes entre chaque requête
-                time.sleep(2)
-                data = context.resources.coingecko_resource.get_coin_market_data(coin_id)
-                market_data.append(data)
-                context.log.info(f"Données extraites pour {coin_id}")
-            except Exception as e:
-                if "429" in str(e):
-                    context.log.warning(f"Limite de taux atteinte pour {coin_id}. Attente de 60 secondes...")
-                    time.sleep(60)  # Attendre 60 secondes en cas de limite atteinte
-                    try:
-                        data = context.resources.coingecko_resource.get_coin_market_data(coin_id)
-                        market_data.append(data)
-                        context.log.info(f"Données extraites pour {coin_id} après attente")
-                    except Exception as retry_e:
-                        context.log.error(f"Échec de la récupération après attente pour {coin_id}: {str(retry_e)}")
-                else:
-                    context.log.error(f"Erreur lors de l'extraction des données pour {coin_id}: {str(e)}")
-                continue
-        
-        context.log.info(f"Extraction terminée. {len(market_data)} cryptomonnaies traitées")
-        return market_data
-        
-    except Exception as e:
-        context.log.error(f"Erreur lors de l'extraction des données de marché: {str(e)}")
-        raise
+        partition_date = context.partition_key
+        context.log.info(f"Extraction des données de marché pour la partition {partition_date}")
+    except:
+        # Si le run n'est pas partitionné, utiliser la date du jour
+        partition_date = datetime.now().strftime("%Y-%m-%d")
+        context.log.info(f"Run non partitionné. Extraction des données de marché pour la date {partition_date}")
+
+    market_data = context.resources.coingecko_resource.get_coin_market_data(TOP_CRYPTO_COINS)
+    context.log.info(f"Récupération de {len(market_data)} entrées de données de marché")
+
+    return market_data
 
 @asset(
     description="Stocke les données de marché dans DuckDB",

@@ -87,7 +87,7 @@ def api_data_sensor(context: SensorEvaluationContext):
 
 # Capteur pour surveiller la création de fichiers de visualisation
 @sensor(
-    job=None,  # Ce capteur n'est qu'un exemple et ne déclenche pas directement un job
+    job=None,  # Ce capteur ne déclenche pas directement un job
     minimum_interval_seconds=60 * 60,  # Vérifier toutes les heures
     description="Capteur qui surveille la création de fichiers de visualisation",
     default_status=DefaultSensorStatus.STOPPED,
@@ -119,6 +119,6 @@ def visualization_files_sensor(context: SensorEvaluationContext):
     
     if detected_files:
         context.log.info(f"Fichiers de visualisation détectés: {', '.join(detected_files)}")
-        
+        # Modifier pour envoyer un email ou une notification par exemple
     # Ce capteur ne déclenche pas de job, il enregistre simplement l'information
     return None 
