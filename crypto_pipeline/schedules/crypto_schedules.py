@@ -29,7 +29,7 @@ MONTHLY_PARTITIONS = MonthlyPartitionsDefinition(start_date=datetime(2023, 1, 1)
 # Schedule pour le job de métadonnées (désactivé)
 metadata_schedule = ScheduleDefinition(
     name="metadata_schedule",
-    cron_schedule="0 * * * *",  # Toutes les heures
+    cron_schedule="0 0 * * 0",  # Toutes les heures
     job=crypto_metadata_job,
     execution_timezone="Europe/Paris",
     should_execute=lambda context: False,  # Désactivé

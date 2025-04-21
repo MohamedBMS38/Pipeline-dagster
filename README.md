@@ -1,39 +1,73 @@
 # Pipeline de Données Cryptomonnaies avec Dagster
 
 Ce projet implémente un pipeline de données pour l'analyse des cryptomonnaies en utilisant Dagster comme orchestrateur. Il extrait des données de l'API CoinGecko, les stocke dans une base de données DuckDB, et génère des analyses et visualisations.
+Pour ce faire, nous avons utilisé les technologies suivantes :
+- **Dagster** comme orchestrateur de flux de données
+- **API CoinGecko** comme source de données sur les cryptomonnaies
+- **DuckDB** comme base de données analytique légère
+- **Pandas** pour la manipulation des données
+- **Matplotlib** pour les visualisations
 
-## Architecture du Projet
+## Composants principaux
 
-Le projet est structuré en plusieurs composants :
+1. **Ressources** (`resources/`)
+   - `CoinGeckoResource` : Interface avec l'API CoinGecko
+   - `DuckDBResource` : Interface avec la base de données DuckDB
 
-1. **Extraction** (`crypto_pipeline/assets/extract/`)
-   - Récupération des métadonnées des cryptomonnaies
+2. **Assets** (`assets/`)
+   - Extraction des métadonnées des cryptomonnaies
    - Extraction des données de marché
-   - Historique des prix
+   - Extraction de l'historique des prix
+   - Stockage des données
+   - Analyse des tendances
+   - Visualisations
 
-2. **Stockage** (`crypto_pipeline/assets/load/`)
-   - Stockage des données dans DuckDB
-   - Gestion des partitions temporelles
+3. **Jobs** (`jobs/`)
+   - Jobs spécifiques pour chaque étape du processus
 
-3. **Transformation** (`crypto_pipeline/assets/transform/`)
-   - Analyse des tendances de prix
-   - Calcul des indicateurs techniques
+4. **Schedules** (`schedules/`)
+   - Exécution hebdomadaire pour les métadonnées
+   - Exécution périodique pour les données de marché
+   - Exécution périodique pour l'historique des prix
+   - Execution périodique pour les analyses
+   - Exécution mensuelle pour les rapports
 
-4. **Visualisation** (`crypto_pipeline/assets/visualize/`)
-   - Génération de graphiques
-   - Rapports mensuels
+5. **Sensors** (`sensors/`)
+   - Détection des mouvements de prix significatifs
+   - Surveillance de la disponibilité des données
+   - Surveillance de la création de visualisations
 
-5. **Orchestration** (`crypto_pipeline/`)
-   - Jobs Dagster pour l'exécution des étapes
-   - Schedules pour l'automatisation
-   - Sensors pour la détection de changements
+6. **Utilis** (`utils/`)
+   - Fonctions de visualisation avancées pour les tests
+
+7. **Tests** (`tests/`)
+   - Tests unitaires pour les ressources
+   - Tests unitaires pour les assets
+   - Tests unitaires pour les jobs
+   - Tests unitaires pour les visualisations
+
+## Fonctionnalités implémentées
+
+- Extraction automatique des données de l'API CoinGecko
+- Stockage efficace dans DuckDB avec schéma optimisé
+- Analyse des tendances de prix des cryptomonnaies
+- Visualisation comparative des performances
+- Génération de rapports mensuels
+- Orchestration complète avec partitionnement des données
+- Conteneurisation avec Docker pour un déploiement facile
+
+## Installation et Configuration
+
+1. **Installation locale** : Suivez les instructions ci dessous
+2. **Docker** : Utilisez `docker-compose up` depuis la racine du projet pour démarrer le projet dans un conteneur
+3. **Interface Dagster** : Accédez à `http://localhost:3000` pour interagir avec la pipeline
 
 ## Prérequis Système
 
 - Python 3.8 ou supérieur
 - pip (gestionnaire de paquets Python)
 - Git
-- 500 Mo d'espace disque minimum
+- 2 GO d'espace disque minimum
 - Connexion Internet
 
 ## Installation
@@ -126,9 +160,8 @@ Les jobs sont désactivés par défaut pour éviter une exécution automatique. 
 Les données sont stockées dans une base DuckDB avec les tables suivantes :
 
 - `crypto_metadata` : Informations sur les cryptomonnaies
-- `market_data` : Données de marché quotidiennes
-- `price_history` : Historique des prix
-- `price_trends` : Analyses des tendances
+- `crypto_market_data` : Données de marché quotidiennes
+- `crypto_price_history` : Historique des prix
 
 ## Visualisations
 
@@ -158,115 +191,8 @@ Si vous rencontrez des problèmes :
 
 Le projet inclut des tests unitaires pour assurer la fiabilité du code. Les tests sont organisés dans le dossier `crypto_pipeline/tests/`.
 
-### Structure des Tests
-
-```
-crypto_pipeline/tests/
-├── test_extract/          # Tests des fonctions d'extraction
-├── test_load/             # Tests des fonctions de chargement
-├── test_transform/        # Tests des fonctions de transformation
-├── test_visualize/        # Tests des fonctions de visualisation
-└── test_utils/            # Tests des fonctions utilitaires
-```
-
 ### Exécution des Tests
 
-1. **Lancer tous les tests**
-   ```bash
-   python -m pytest crypto_pipeline/tests/
-   ```
-
-2. **Lancer les tests d'un module spécifique**
-   ```bash
-   # Tests d'extraction
-   python -m pytest crypto_pipeline/tests/test_extract/
-
-   # Tests de chargement
-   python -m pytest crypto_pipeline/tests/test_load/
-
-   # Tests de transformation
-   python -m pytest crypto_pipeline/tests/test_transform/
-
-   # Tests de visualisation
-   python -m pytest crypto_pipeline/tests/test_visualize/
-   ```
-
-3. **Lancer un test spécifique**
-   ```bash
-   python -m pytest crypto_pipeline/tests/test_extract/test_coingecko_api.py::test_get_crypto_list
-   ```
-
-4. **Générer un rapport de couverture**
-   ```bash
-   python -m pytest --cov=crypto_pipeline crypto_pipeline/tests/
-   ```
-
-### Types de Tests
-
-1. **Tests d'API**
-   - Vérification des appels à l'API CoinGecko
-   - Tests des limites de taux
-   - Gestion des erreurs
-
-2. **Tests de Base de Données**
-   - Création des tables
-   - Insertion des données
-   - Requêtes de sélection
-
-3. **Tests de Transformation**
-   - Calcul des indicateurs techniques
-   - Analyse des tendances
-   - Agrégation des données
-
-4. **Tests de Visualisation**
-   - Génération des graphiques
-   - Format des fichiers
-   - Contenu des visualisations
-
-### Bonnes Pratiques
-
-1. **Avant d'écrire un test**
-   - Identifier la fonctionnalité à tester
-   - Définir les cas de test
-   - Préparer les données de test
-
-2. **Pendant l'écriture du test**
-   - Utiliser des fixtures pour les données de test
-   - Tester les cas limites
-   - Vérifier les erreurs attendues
-
-3. **Après l'écriture du test**
-   - Vérifier la couverture du code
-   - Documenter les cas de test
-   - Maintenir les tests à jour
-
-### Exemple de Test
-
-```python
-def test_get_crypto_list():
-    """Test de la récupération de la liste des cryptomonnaies."""
-    # Préparation
-    api = CoinGeckoAPI()
-    
-    # Exécution
-    result = api.get_crypto_list()
-    
-    # Vérification
-    assert isinstance(result, list)
-    assert len(result) > 0
-    assert all(isinstance(coin, dict) for coin in result)
+```bash
+python -m pytest crypto_pipeline/tests/
 ```
-
-## Contribution
-
-Les contributions sont les bienvenues ! Pour contribuer :
-
-1. Fork le projet
-2. Créer une branche pour votre fonctionnalité
-3. Commiter vos changements
-4. Pousser vers la branche
-5. Ouvrir une Pull Request
-
-## Licence
-
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.

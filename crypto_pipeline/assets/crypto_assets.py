@@ -349,11 +349,9 @@ def monthly_crypto_report(context: AssetExecutionContext) -> Tuple[pd.DataFrame,
         # Ajuster l'espacement entre les graphiques
         plt.tight_layout()
         
-        # Créer le répertoire s'il n'existe pas
-        os.makedirs("crypto_pipeline/data/visualizations", exist_ok=True)
-        
+
         # Sauvegarder le graphique
-        file_path = f"crypto_pipeline/data/visualizations/monthly_report_{month}.png"
+        file_path = f"crypto_pipeline/data/monthly_report_{month}.png"
         plt.savefig(file_path, dpi=300, bbox_inches='tight')
         plt.close()
         
@@ -363,7 +361,7 @@ def monthly_crypto_report(context: AssetExecutionContext) -> Tuple[pd.DataFrame,
     except Exception as e:
         context.log.error(f"Erreur lors de la génération du rapport mensuel: {e}")
         empty_df = pd.DataFrame(columns=['id', 'name', 'price', 'market_cap', 'price_change_percentage_24h'])
-        file_path = f"crypto_pipeline/data/visualizations/monthly_report_error_{month}.txt"
+        file_path = f"crypto_pipeline/data/monthly_report_error_{month}.txt"
         with open(file_path, 'w') as f:
             f.write(f"Erreur lors de la génération du rapport: {e}")
         return empty_df, file_path 
