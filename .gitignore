@@ -43,4 +43,10 @@ env/
 .env
 
 # Logs
-*.log 
+*.log
+
+# Fichiers de données
+crypto_pipeline/data/*.duckdb
+crypto_pipeline/data/*.png
+crypto_pipeline/data/*.txt
+crypto_pipeline/data/visualizations/ 

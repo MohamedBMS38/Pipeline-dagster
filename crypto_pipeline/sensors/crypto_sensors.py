@@ -23,7 +23,7 @@ from crypto_pipeline.assets.crypto_assets import DAILY_PARTITIONS, START_DATE
     job=crypto_analytics_job,
     minimum_interval_seconds=60 * 30,  # Vérifier toutes les 30 minutes
     description="Capteur qui détecte les mouvements de prix importants et déclenche une analyse",
-    default_status=DefaultSensorStatus.RUNNING,
+    default_status=DefaultSensorStatus.STOPPED,
 )
 def price_movement_sensor(context: SensorEvaluationContext):
     """
@@ -54,7 +54,7 @@ def price_movement_sensor(context: SensorEvaluationContext):
     job=crypto_market_data_job,
     minimum_interval_seconds=60 * 15,  # Vérifier toutes les 15 minutes
     description="Capteur qui vérifie la disponibilité de nouvelles données sur l'API CoinGecko",
-    default_status=DefaultSensorStatus.RUNNING,
+    default_status=DefaultSensorStatus.STOPPED,
 )
 def api_data_sensor(context: SensorEvaluationContext):
     """
@@ -90,7 +90,7 @@ def api_data_sensor(context: SensorEvaluationContext):
     job=None,  # Ce capteur n'est qu'un exemple et ne déclenche pas directement un job
     minimum_interval_seconds=60 * 60,  # Vérifier toutes les heures
     description="Capteur qui surveille la création de fichiers de visualisation",
-    default_status=DefaultSensorStatus.RUNNING,
+    default_status=DefaultSensorStatus.STOPPED,
 )
 def visualization_files_sensor(context: SensorEvaluationContext):
     """

@@ -6,6 +6,8 @@ import os
 import pandas as pd
 import duckdb
 from dagster import ConfigurableResource, get_dagster_logger
+from typing import List, Dict, Any
+from datetime import datetime
 
 logger = get_dagster_logger()
 
@@ -301,4 +303,51 @@ class DuckDBResource(ConfigurableResource):
                 return result
             except Exception as e:
                 logger.error(f"Erreur lors de la récupération de l'historique des prix pour {coin_id} : {e}")
-                return pd.DataFrame(columns=['timestamp', 'price', 'market_cap', 'total_volume']) 
+                return pd.DataFrame(columns=['timestamp', 'price', 'market_cap', 'total_volume'])
+    
+    def get_coin_price_history(self, coin_id: str) -> pd.DataFrame:
+        """
+        Récupère l'historique des prix pour une cryptomonnaie.
+        
+        Args:
+            coin_id: Identifiant de la cryptomonnaie.
+        
+        Returns:
+            DataFrame pandas contenant les résultats.
+        """
+        try:
+            with self._get_connection() as conn:
+                # Vérifier si la table existe
+                tables = conn.execute("SELECT table_name FROM duckdb_tables()").fetchall()
+                table_names = [t[0] for t in tables]
+                
+                if 'price_history' not in table_names:
+                    logger.warning("La table price_history n'existe pas encore")
+                    return pd.DataFrame(columns=['date', 'price'])
+                    
+                # Vérifier si la table contient des données pour cette crypto
+                count = conn.execute(
+                    "SELECT COUNT(*) FROM price_history WHERE coin_id = ?",
+                    (coin_id,)
+                ).fetchone()[0]
+                
+                if count == 0:
+                    logger.warning(f"Pas de données d'historique pour {coin_id}")
+                    return pd.DataFrame(columns=['date', 'price'])
+                    
+                # Récupérer l'historique des prix
+                result = conn.execute(
+                    """
+                    SELECT date, price
+                    FROM price_history
+                    WHERE coin_id = ?
+                    ORDER BY date ASC
+                    """,
+                    (coin_id,)
+                ).df()
+                
+                return result
+                
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération de l'historique des prix pour {coin_id} : {e}")
+            return pd.DataFrame(columns=['date', 'price']) 
